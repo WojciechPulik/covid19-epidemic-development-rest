@@ -22,8 +22,10 @@ public class DailySimulation implements Serializable{
 	private Integer dayOfSymulation;
 	private Long currentPopulation;
 	private Long infected;
+	private Long newInfected;
 	private Long healthySusceptible;
 	private Long died;
+	private Long dailyDeaths;
 	private Long recoveredResistant;
 	@ManyToOne
 	@JoinColumn(name="simulation_id")
@@ -31,14 +33,33 @@ public class DailySimulation implements Serializable{
 	
 	public DailySimulation() {}
 	
-	public DailySimulation(Integer dayOfSymulation, Long currentPopulation, Long infected, Long healthySusceptible,
-			Long died, Long recoveredResistant) {
+	public DailySimulation(Integer dayOfSymulation, Long currentPopulation, Long infected, Long newInfected, 
+			Long healthySusceptible, Long died, Long dailyDeaths, Long recoveredResistant) {
 		this.dayOfSymulation = dayOfSymulation;
 		this.currentPopulation = currentPopulation;
 		this.infected = infected;
+		this.newInfected = newInfected;
 		this.healthySusceptible = healthySusceptible;
 		this.died = died;
+		this.dailyDeaths = dailyDeaths;
 		this.recoveredResistant = recoveredResistant;
+	}
+
+	
+	public Long getNewInfected() {
+		return newInfected;
+	}
+
+	public void setNewInfected(Long newInfected) {
+		this.newInfected = newInfected;
+	}
+
+	public Long getDailyDeaths() {
+		return dailyDeaths;
+	}
+
+	public void setDailyDeaths(Long dailyDeaths) {
+		this.dailyDeaths = dailyDeaths;
 	}
 
 	public Long getId() {
@@ -107,10 +128,12 @@ public class DailySimulation implements Serializable{
 
 	@Override
 	public String toString() {
-		return "DailySimulation [id=" + id + ", dayOfSymulation=" + dayOfSymulation + ", currentPopulation="
-				+ currentPopulation + ", infected=" + infected + ", healthySusceptible=" + healthySusceptible
-				+ ", died=" + died + ", recoveredResistant=" + recoveredResistant + ", simulation=" + simulation.getName() + "]";
+		return "dayOfSymulation=" + dayOfSymulation + ", infected=" + infected
+				+ ", healthySusceptible=" + healthySusceptible + ", died=" + died + ", recoveredResistant="
+				+ recoveredResistant;
 	}
+
+	
 	
 	
 	
