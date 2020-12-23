@@ -30,7 +30,7 @@ public class Simulation implements Serializable{
 	private Integer recoveryTime;
 	private Integer deadTime;
 	private Integer durationTime;
-	@OneToMany(mappedBy="simulation", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="simulation")//, fetch=FetchType.EAGER)
 	private List <DailySimulation> dailySimulations = new ArrayList<>();
 	
 	public Simulation() {}

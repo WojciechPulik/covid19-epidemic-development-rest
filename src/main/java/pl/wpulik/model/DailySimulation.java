@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -20,23 +21,21 @@ public class DailySimulation implements Serializable{
 	@Column(name="id_daily_sim")
 	private Long id;
 	private Integer dayOfSymulation;
-	private Long currentPopulation;
 	private Long infected;
 	private Long newInfected;
 	private Long healthySusceptible;
 	private Long died;
 	private Long dailyDeaths;
 	private Long recoveredResistant;
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.LAZY)
 	@JoinColumn(name="simulation_id")
 	private Simulation simulation;
 	
 	public DailySimulation() {}
 	
-	public DailySimulation(Integer dayOfSymulation, Long currentPopulation, Long infected, Long newInfected, 
+	public DailySimulation(Integer dayOfSymulation, Long infected, Long newInfected, 
 			Long healthySusceptible, Long died, Long dailyDeaths, Long recoveredResistant) {
 		this.dayOfSymulation = dayOfSymulation;
-		this.currentPopulation = currentPopulation;
 		this.infected = infected;
 		this.newInfected = newInfected;
 		this.healthySusceptible = healthySusceptible;
@@ -76,14 +75,6 @@ public class DailySimulation implements Serializable{
 
 	public void setDayOfSymulation(Integer dayOfSymulation) {
 		this.dayOfSymulation = dayOfSymulation;
-	}
-
-	public Long getCurrentPopulation() {
-		return currentPopulation;
-	}
-
-	public void setCurrentPopulation(Long currentPopulation) {
-		this.currentPopulation = currentPopulation;
 	}
 
 	public Long getInfected() {

@@ -8,6 +8,9 @@ import java.math.MathContext;
 import java.util.*;
 
 import pl.wpulik.model.Simulation;
+import pl.wpulik.dto.DTOMapper;
+import pl.wpulik.dto.DailyDTO;
+import pl.wpulik.dto.SimulationDTO;
 import pl.wpulik.model.DailySimulation;
 
 @Service
@@ -22,23 +25,38 @@ public class EpidemicCourse {
 	private SimulationService simulationService;
 	private DailySimulationService dailySimulationService;
 	private List<DailySimulation> epidemicCourse = new ArrayList<>();
+	private DTOMapper dtoMapper;
 	
 	public EpidemicCourse() {}
 
 	@Autowired
-	public EpidemicCourse(SimulationService simulationService, DailySimulationService dailySimulationService) {
+	public EpidemicCourse(SimulationService simulationService, DailySimulationService dailySimulationService,
+			DTOMapper dtoMapper) {
 		this.simulationService = simulationService;
 		this.dailySimulationService = dailySimulationService;
+		this.dtoMapper = dtoMapper;
 	}
 	
 	public Simulation addNewSimulation(Simulation simulation) {
 		return simulationService.save(simulation);
 	}
 	
+	public Simulation addNewSimulationDto(SimulationDTO dto) {
+		return addNewSimulation(dtoMapper.toSimulationMapping(dto));
+	}
+	
+	public List<DailyDTO> createNewEpidemicSimulation(SimulationDTO dto){
+		Simulation simulation = addNewSimulationDto(dto);
+		firstDay(simulation);
+		covidCourse();
+		persistSimulation(simulation);
+		epidemicCourse = new ArrayList<>();
+		return dailySimulationService.getDtoCourseById(simulation.getId());		
+	}
+	
 	public DailySimulation firstDay(Simulation initialData) {
 		setFactors(initialData);
-		Simulation simulation = addNewSimulation(initialData);
-		DailySimulation dailySimulation = dailySimulationService.firstDayMapping(simulation);
+		DailySimulation dailySimulation = dailySimulationService.firstDayMapping(initialData);
 		epidemicCourse.add(dailySimulation);
 		return dailySimulation;
 		
@@ -52,33 +70,38 @@ public class EpidemicCourse {
 		Ts = simulation.getDurationTime();
 	}
 	
+	/*
 	public List<DailySimulation> dailyCovidCourse(){
 		return epidemicCourse;
 	}
-	/*
-	 * DailySimulation:
-	 * (Integer dayOfSymulation, Long currentPopulation, Long infected, Long newInfected, 
-			Long healthySusceptible, Long died, Long dailyDeaths, Long recoveredResistant)
-	 */
+	*/
 	public void covidCourse() {
-		for(int i = 1; i < Ts; i++) {
+		boolean isSusceptible = true;
+		for(int i = 1; i < Ts && isSusceptible; i++) {
 			long infected = currentInfected(i);
 			long newInfected = newInfected(i);
 			long susceptible = susceptibleCount(i, infected);
 			long dailyDeaths = died(i);
 			long deathsSum = formerDeaths(i)+ dailyDeaths;
 			long recovered = recovered(i);
-			epidemicCourse.add(new DailySimulation(
-					i + 1,
-					-3L, //to remove?
-					infected - dailyDeaths,
-					newInfected,
-					susceptible,
-					deathsSum,
-					dailyDeaths,
-					recovered
-					));
+			if(susceptible >= 0) {
+				epidemicCourse.add(new DailySimulation(
+						i + 1,
+						infected - dailyDeaths - recovered,
+						newInfected,
+						susceptible,
+						deathsSum,
+						dailyDeaths,
+						recoveredSum(i)
+						));
+			}else {
+				isSusceptible = false;
+			}
 		}
+	}
+	
+	public Simulation persistSimulation(Simulation simulation) {
+		return dailySimulationService.persistSimulationCourse(simulation, epidemicCourse);
 	}
 	
 	private Long currentInfected(int iter) {
@@ -122,6 +145,17 @@ public class EpidemicCourse {
 			BigDecimal died = BigDecimal.valueOf(infected).multiply(M);
 			BigDecimal diedRound = died.round(new MathContext(0));
 			return infected - diedRound.longValue();
+		}
+		return 0L;
+	}
+	
+	private Long recoveredSum(int iter) {
+		if(iter > Ti - 1) {
+			long infected = epidemicCourse.get(iter - Ti).getNewInfected();
+			long recovered = epidemicCourse.get(iter - 1).getRecoveredResistant();
+			BigDecimal died = BigDecimal.valueOf(infected).multiply(M);
+			BigDecimal diedRound = died.round(new MathContext(0));
+			return recovered + infected - diedRound.longValue();
 		}
 		return 0L;
 	}
