@@ -8,6 +8,7 @@ import java.math.MathContext;
 import java.util.*;
 
 import pl.wpulik.model.Simulation;
+import pl.wpulik.repository.SimulationRepository;
 import pl.wpulik.dto.DTOMapper;
 import pl.wpulik.dto.DailyDTO;
 import pl.wpulik.dto.SimulationDTO;
@@ -26,15 +27,17 @@ public class EpidemicCourse {
 	private DailySimulationService dailySimulationService;
 	private List<DailySimulation> epidemicCourse = new ArrayList<>();
 	private DTOMapper dtoMapper;
+	private SimulationRepository simulationRepository;
 	
 	public EpidemicCourse() {}
 
 	@Autowired
 	public EpidemicCourse(SimulationService simulationService, DailySimulationService dailySimulationService,
-			DTOMapper dtoMapper) {
+			DTOMapper dtoMapper, SimulationRepository simulationRepository) {
 		this.simulationService = simulationService;
 		this.dailySimulationService = dailySimulationService;
 		this.dtoMapper = dtoMapper;
+		this.simulationRepository = simulationRepository;
 	}
 	
 	public Simulation addNewSimulation(Simulation simulation) {
@@ -46,12 +49,16 @@ public class EpidemicCourse {
 	}
 	
 	public List<DailyDTO> createNewEpidemicSimulation(SimulationDTO dto){
-		Simulation simulation = addNewSimulationDto(dto);
-		firstDay(simulation);
-		covidCourse();
-		persistSimulation(simulation);
-		epidemicCourse = new ArrayList<>();
-		return dailySimulationService.getDtoCourseById(simulation.getId());		
+		if(simulationRepository.findByName(dto.getN()).isEmpty()) {
+			Simulation simulation = addNewSimulationDto(dto);
+			firstDay(simulation);
+			covidCourse();
+			persistSimulation(simulation);
+			epidemicCourse = new ArrayList<>();
+			return dailySimulationService.getDtoCourseById(simulation.getId());	
+		}else {
+			return new ArrayList<DailyDTO>();	
+		}
 	}
 	
 	public DailySimulation firstDay(Simulation initialData) {
