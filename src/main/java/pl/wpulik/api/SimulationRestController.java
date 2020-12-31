@@ -12,14 +12,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.function.EntityResponse;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import pl.wpulik.dto.DailyDTO;
 import pl.wpulik.dto.SimulationDTO;
-import pl.wpulik.model.DailySimulation;
-import pl.wpulik.model.Simulation;
-import pl.wpulik.repository.DailySimulationRepository;
 import pl.wpulik.service.DailySimulationService;
 import pl.wpulik.service.EpidemicCourse;
 import pl.wpulik.service.SimulationService;
@@ -30,17 +26,61 @@ public class SimulationRestController {
 	private EpidemicCourse epidemicCourse;
 	private SimulationService simulationService;
 	private DailySimulationService dailySimulationService;
-	private DailySimulationRepository dailySimulationRepository;
 	
 	@Autowired
 	public SimulationRestController(EpidemicCourse epidemicCourse, SimulationService simulationService, 
-			DailySimulationService dailySimulationService, DailySimulationRepository dailySimulationRepository) {
+			DailySimulationService dailySimulationService) {
 		this.epidemicCourse = epidemicCourse;
 		this.simulationService = simulationService;
 		this.dailySimulationService = dailySimulationService;
-		this.dailySimulationRepository = dailySimulationRepository;
 	}
 
+	
+	@PostMapping(path = "/addnewsimulation", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<List<DailyDTO>> addNewSimulation(@RequestBody SimulationDTO dto){
+		List<DailyDTO> result = epidemicCourse.createNewEpidemicSimulation(dto);
+		for(DailyDTO dd : result) {
+			System.out.print(dd.toString() + " Suma kontrolna: " + (dd.getPi()+dd.getPm()+dd.getPr()+dd.getPv()));		}
+		if(!result.isEmpty()) {
+			URI location = ServletUriComponentsBuilder
+					.fromCurrentRequest()
+					.path("/{status}")
+					.buildAndExpand("simulation_created")
+					.toUri();
+			return ResponseEntity.created(location).body(result);			
+		}else {
+			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+		}		
+	}
+	
+	@PostMapping(path = "/updatesimulation", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<List<DailyDTO>> updateSimulation(@RequestBody SimulationDTO dto){
+		List<DailyDTO> result = epidemicCourse.updateEpidemicSimulation(dto);
+		for(DailyDTO dd : result) {
+			System.out.print(dd.toString() + " Suma kontrolna: " + (dd.getPi()+dd.getPm()+dd.getPr()+dd.getPv()));		}
+		if(!result.isEmpty()) {
+			URI location = ServletUriComponentsBuilder
+					.fromCurrentRequest()
+					.path("/{status}")
+					.buildAndExpand("simulation_updated")
+					.toUri();
+			return ResponseEntity.created(location).body(result);			
+		}else {
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+		}		
+	}
+	
+	@RequestMapping("/allsimulations")
+	public ResponseEntity<List<SimulationDTO>> getAllSimulations(){
+		List<SimulationDTO> dtos = simulationService.getAllSimulationsDto();
+		if(dtos.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}else {
+			return ResponseEntity.ok(dtos);
+		}
+	}
+	
+	
 	@RequestMapping("/simulation/id/{id}")
 	public ResponseEntity<SimulationDTO> getSimulationById(@PathVariable long id) {
 		SimulationDTO dto = simulationService.getDtoById(id);
@@ -59,25 +99,6 @@ public class SimulationRestController {
 		}else {
 			return ResponseEntity.ok(dto);
 		}
-	}
-	
-	
-	@PostMapping(path = "/addnewsimulation", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<List<DailyDTO>> addNewSimulation(@RequestBody SimulationDTO dto){
-		List<DailyDTO> result = epidemicCourse.createNewEpidemicSimulation(dto);
-		if(!result.isEmpty()) {
-			result.forEach(System.out::println);
-			URI location = ServletUriComponentsBuilder
-					.fromCurrentRequest()
-					.path("/{status}")
-					.buildAndExpand("simulation_created")
-					.toUri();
-			return ResponseEntity.created(location).body(result);			
-		}else {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
-		
-		
 	}
 	
 	@RequestMapping("/simulations/id/{id}")

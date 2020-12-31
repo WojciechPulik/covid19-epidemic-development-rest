@@ -2,8 +2,6 @@ package pl.wpulik.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -15,7 +13,6 @@ import pl.wpulik.dto.DailyDTO;
 import pl.wpulik.model.DailySimulation;
 import pl.wpulik.model.Simulation;
 import pl.wpulik.repository.DailySimulationRepository;
-import pl.wpulik.repository.SimulationRepository;
 
 @Service
 @Transactional
@@ -39,6 +36,11 @@ public class DailySimulationService {
 	
 	public List<DailySimulation> saveAll(List<DailySimulation> dailySimulations){
 		return dailySimulationRepository.saveAll(dailySimulations);
+	}
+	
+	public boolean removeAllDailySimualtions(Long simulationId) {
+		dailySimulationRepository.deleteAllBySimulationId(simulationId);
+		return dailySimulationRepository.findAllBySimulationId(simulationId).isEmpty();
 	}
 	
 	

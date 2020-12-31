@@ -3,8 +3,11 @@ package pl.wpulik.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import javax.transaction.Transactional;
 
 import pl.wpulik.model.DailySimulation;
 
@@ -13,5 +16,10 @@ public interface DailySimulationRepository extends JpaRepository<DailySimulation
 	
 	@Query("SELECT ds from DailySimulation ds WHERE simulation_id=:simulationId ")
 	List<DailySimulation>findAllBySimulationId(Long simulationId);
+	
+	@Transactional
+	@Modifying
+	@Query("DELETE from DailySimulation ds WHERE simulation_id=:simulationId ")
+	void deleteAllBySimulationId(Long simulationId); 
 
 }

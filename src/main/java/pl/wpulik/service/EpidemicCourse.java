@@ -22,6 +22,7 @@ public class EpidemicCourse {
 	private static Integer Ti;
 	private static Integer Tm;
 	private static Integer Ts;
+	private static Long P;
 	
 	private SimulationService simulationService;
 	private DailySimulationService dailySimulationService;
@@ -46,6 +47,25 @@ public class EpidemicCourse {
 	
 	public Simulation addNewSimulationDto(SimulationDTO dto) {
 		return addNewSimulation(dtoMapper.toSimulationMapping(dto));
+	}
+	
+	public List<DailyDTO> updateEpidemicSimulation(SimulationDTO dto){
+		long id = simulationService.getSimualtionIdByName(dto.getN());
+		Simulation simulation = simulationService.findById(id);
+		if(simulation.getId()!=null) {
+			simulation = dtoMapper.toSimulationMapping(dto);
+			simulation.setId(id);
+			dailySimulationService.removeAllDailySimualtions(id);
+			simulationService.save(simulation);
+			firstDay(simulation);
+			covidCourse();
+			persistSimulation(simulation);
+			epidemicCourse = new ArrayList<>();
+			return dailySimulationService.getDtoCourseById(simulation.getId());
+		}else {
+			return new ArrayList<DailyDTO>();
+		}
+		
 	}
 	
 	public List<DailyDTO> createNewEpidemicSimulation(SimulationDTO dto){
@@ -75,23 +95,30 @@ public class EpidemicCourse {
 		Ti = simulation.getRecoveryTime();
 		Tm = simulation.getDeadTime();
 		Ts = simulation.getDurationTime();
+		P = simulation.getPopulationSize();
 	}
 	
-	/*
-	public List<DailySimulation> dailyCovidCourse(){
-		return epidemicCourse;
-	}
-	*/
 	public void covidCourse() {
 		boolean isSusceptible = true;
-		for(int i = 1; i < Ts && isSusceptible; i++) {
-			long infected = currentInfected(i);
+		for(int i = 1; i < Ts; i++) {
+			long infected = 0;
+			if(isSusceptible) {
+				infected = currentInfected(i);
+			}else {
+				infected = currentInfectedDecrease(i);
+			}
 			long newInfected = newInfected(i);
 			long susceptible = susceptibleCount(i, infected);
+			if(susceptible <= 0) {
+				isSusceptible = false;
+				susceptible = 0;
+				newInfected = 0;
+			}
+			
 			long dailyDeaths = died(i);
 			long deathsSum = formerDeaths(i)+ dailyDeaths;
 			long recovered = recovered(i);
-			if(susceptible >= 0) {
+			if(infected > 0) {
 				epidemicCourse.add(new DailySimulation(
 						i + 1,
 						infected - dailyDeaths - recovered,
@@ -116,6 +143,10 @@ public class EpidemicCourse {
 		BigDecimal currentInfected = BigDecimal.valueOf(formerInfected).multiply(R);
 		BigDecimal infectedRound = currentInfected.round(new MathContext(0));
 		return infectedRound.longValue();
+	}
+	
+	private Long currentInfectedDecrease(int iter) {
+		return epidemicCourse.get(iter - 1).getInfected();
 	}
 	
 	private Long newInfected(int iter) {

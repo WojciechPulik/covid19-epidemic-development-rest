@@ -11,5 +11,7 @@ import pl.wpulik.model.Simulation;
 public interface SimulationRepository extends JpaRepository<Simulation, Long>{
 	
 	Optional<Simulation>findByName(String name);
+	
+
 
 }

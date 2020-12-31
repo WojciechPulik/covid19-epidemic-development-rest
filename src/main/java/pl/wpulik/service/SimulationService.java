@@ -6,7 +6,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
-import javax.persistence.NonUniqueResultException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,6 +47,14 @@ public class SimulationService {
 		}
 	}
 	
+	public List<SimulationDTO> getAllSimulationsDto() {
+		List<SimulationDTO> dtos = new ArrayList<>();
+		for(Simulation sim : simulationRepository.findAll()) {
+			dtos.add(dtoMapper.toSimulationDTOMapping(sim));
+		}
+		return dtos;
+	}
+	
 	public SimulationDTO getDtoById(Long simulationId) {
 		return dtoMapper.toSimulationDTOMapping(findById(simulationId));
 	}
@@ -78,7 +85,7 @@ public class SimulationService {
 		}
 	}
 	
-	private Long getSimualtionIdByName(String name) {
+	public Long getSimualtionIdByName(String name) {
 		Optional<Simulation> simualtion = simulationRepository.findByName(name);
 		Long id = null;
 		try {
